@@ -1,22 +1,47 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useInView } from 'react-intersection-observer';
 
 import { PokemonCard } from "./PokemonCard";
-import { usePokemonList } from "../service/queries";
+import { useInfinitePokemonList } from "../service/queries";
 
 import "./PokeList.css";
 
 export const PokeList = () => {
-  const { data: pokemonList } = usePokemonList();
+  const { ref, inView } = useInView();
+  const {
+    data: pokemonList,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage
+  } = useInfinitePokemonList();
+
+  const allPokemon = pokemonList?.pages?.reduce(
+    (previousValue, currentValue) => {
+      return [...previousValue, ...currentValue.response]
+    }, []
+  );
+
+  useEffect(() => {
+    if (inView) {
+      fetchNextPage();
+    }
+  }, [inView, fetchNextPage]);
 
   if (!pokemonList) {
-    return 'loading...';
+    return (
+      <div className="app-container">
+        <div className="pokemon-container">
+            {'Loading Pokemon...'}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="app-container">
       <div className="pokemon-container">
         <div className="all-container">
-          {pokemonList.map((pokemonStats) => (
+          {allPokemon.map((pokemonStats) => (
             <PokemonCard
               key={pokemonStats.name}
               id={pokemonStats.id.toString().padStart(3, "0")}
@@ -37,6 +62,18 @@ export const PokeList = () => {
               }
             />
           ))}
+          <button
+            ref={ref}
+            onClick={() => fetchNextPage()}
+            disabled={!hasNextPage || isFetchingNextPage}
+          >
+            {isFetchingNextPage
+              ? 'Loading Pokemon...'
+              : hasNextPage
+              ? 'Load More'
+              : 'All Pokemon have been loaded'
+            }
+          </button>
         </div>
       </div>
     </div>
