@@ -1,41 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+
+import { PokemonCard } from "./PokemonCard";
+import { usePokemonList } from "../service/queries";
 
 import "./PokeList.css";
 
-import { PokemonCard } from "./PokemonCard";
-
 export const PokeList = () => {
-  const [allPokemons, setAllPokemons] = useState([]);
+  const { data: pokemonList } = usePokemonList();
 
-  const getAllPokemons = async () => {
-    const resp = await fetch(
-      "https://pokeapi.co/api/v2/pokemon?limit=649&offset=0"
-    );
-    const data = await resp.json();
-
-    function createPokemonObject(results) {
-      results.forEach(async (pokemon) => {
-        const resp = await fetch(
-          `https://pokeapi.co/api/v2/pokemon/${pokemon.name}`
-        );
-        const data = await resp.json();
-        setAllPokemons((currentList) => [...currentList, data]);
-        await allPokemons.sort((a, b) => a.id - b.id);
-      });
-    }
-    createPokemonObject(data.results);
-    console.log(allPokemons);
-  };
-
-  useEffect(() => {
-    getAllPokemons();
-  }, []);
+  if (!pokemonList) {
+    return 'loading...';
+  }
 
   return (
     <div className="app-container">
       <div className="pokemon-container">
         <div className="all-container">
-          {allPokemons.map((pokemonStats) => (
+          {pokemonList.map((pokemonStats) => (
             <PokemonCard
               key={pokemonStats.name}
               id={pokemonStats.id.toString().padStart(3, "0")}
@@ -48,10 +29,12 @@ export const PokeList = () => {
               height={pokemonStats.height}
               stats={pokemonStats.stats
                 .map((stat) => stat.base_stat)
-                .slice(0, 3)}
+                .slice(0, 3)
+              }
               statsName={pokemonStats.stats
                 .map((stat) => stat.stat.name)
-                .slice(0, 3)}
+                .slice(0, 3)
+              }
             />
           ))}
         </div>
